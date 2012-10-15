@@ -77,15 +77,32 @@ tt <- tktoplevel()
 tkwm.title(tt,"imgur uploader")
 select.file <- function(){
 	fileName<-tclvalue(tkgetOpenFile())
-	tkgrid(tklabel(tt,text=fileName))
 	Name <- tclVar(fileName)
+	entlbl <- tklabel(tt,text="文件名称")
 	entry.Name <-tkentry(tt,width="20",textvariable=Name)
-	tkgrid(entry.Name)
+	tkgrid(entlbl,entry.Name)
 }
 
-btn1 <- tkbutton(tt,text="选择文件",command = select.file)
+imgur_upload = function() {
+	key = '60e9e47cff8483c6dc289a1cd674b40f'
+	fileName<-tclvalue(tkgetOpenFile())
+	Name <- tclVar(fileName)
+	if (is.null(fileName)) stop('请先选择文件')
+	params = list(key = key, image = RCurl::fileUpload(fileName))
+	res = XML::xmlToList(RCurl::postForm("http://api.imgur.com/2/upload.xml", .params = params))
+	if (is.null(res$links$original)) stop('failed to upload ', fileName)
+	fileInfo <- structure(res$links$original, XML = res)
+	uri <- attr(fileInfo,"XML")$links$original
+	imageHtml <- tclVar(paste("<img src=\"",uri,"\" />",sep=""))
+	entlb2 <- tklabel(tt,text="图片HTML")
+	entry.imgHtml <-tkentry(tt,width="120",textvariable = imageHtml)
+	tkgrid(entlb2,entry.imgHtml)
+}
+
+# btn1 <- tkbutton(tt,text="选择文件",command = select.file)
 btn2 <- tkbutton(tt,text="关闭",command=function()tkdestroy(tt))
-tkgrid(btn1,btn2)
+btn3 <- tkbutton(tt,text="上传",command= imgur_upload )
+tkgrid(btn2,btn3)
 
 
 
